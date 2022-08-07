@@ -1,0 +1,173 @@
+<!doctype html>
+{% load static %}
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" integrity="sha512-0SPWAwpC/17yYyZ/4HSllgaK7/gg9OlVozq8K7rf3J8LvCjYEEIfzzpnA2/SSjpGIunCSD18r3UhvDcu/xncWA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>Image Croper</title>
+    <style>
+        .preview{
+            overflow: hidden;
+            width: 200px !important;
+            height: 200px !important;
+        }
+        .preview .hello{ 
+            max-width: 100%;
+
+        }
+        .pink #image{
+            max-width: 100%;
+        }
+        #profile-pic{
+            width: 300px;
+            height: 300px;
+        }
+    </style>
+  </head>
+  <body>
+    <h1>Hello, world!</h1>
+    <img src="{% static 'image/avatar.jpg' %}"  class="profile-pic" id="profile-pic">
+    <form action="" method="post" enctype="multipart/form-data" >
+        {% csrf_token %}
+        <input type="file" name="photo" id="avatar-btn" accept="image/png, image/jpg, image/jpeg">
+        <button class="btn btn-dark" type="submit">
+            Upload
+        </button>
+    </form>
+
+    <div class="modal fade " id="preview-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="staticBackdropLabel">Modal title</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-lg-8 text-center mb-2">
+                    <div class="pink">
+                        <img src="#"  id="image" style="display: block; max-width: 100%;">
+                    </div>
+                </div>
+                <div class="col-lg-4 text-center">
+                    <div class="preview" id="preview">
+                        <img src="" alt="" class="hello" id="hello">
+                    </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="close">Close</button>
+              <button type="button" class="btn btn-primary" id="save">save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <!-- Option 1: Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js" integrity="sha512-ooSWpxJsiXe6t4+PPjCgYmVfr1NS5QXJACcR/FPpsdm6kqG1FmQ2SVyg2RXeVuCRBLr0lWHnWJP6Zs1Efvxzww==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+            var picUploadBtn = $("#avatar-btn");
+            var oldImg = $('#profile-pic').attr('src')
+            let cropper, image, tempImage, previewReady, imageName;
+            picUploadBtn.change(function (event) {
+                if (picUploadBtn.val()) {
+                    file = event.target.files[0]
+                    imageName = file.name.split('.')[0] + ".png";
+                    tempImage = URL.createObjectURL(file);
+                    $('#image').attr('src', tempImage)
+                    $("#preview-modal").modal('show');
+                }
+                else {
+                    $('#profile-pic').attr('src', oldImg)
+                }
+            })
+
+            $("#preview-modal").on("show.bs.modal", function () {
+                setTimeout(function () {
+                    image = document.getElementById('image');
+                    cropper = new Cropper(image, {
+                        aspectRatio: 1,
+                        viewMode: 2,
+                        responsive:true,
+                        preview: '.preview-container',
+                        modal: false,
+                        background: false,
+                        ready: function () {
+                            $('#hello').attr('src', tempImage);
+                            var previewImage = document.getElementById('hello');
+                            previewImage.style.cssText = (
+                                'display: block;' +
+                                'width: 100%;' +
+                                'min-width: 0;' +
+                                'min-height: 0;' +
+                                'max-width: none;' +
+                                'max-height: none;'
+                            );
+                            previewReady = true;
+                        },
+                        crop(event) {
+                            if (!previewReady) {
+                                return;
+                            }
+                            
+                            var data = event.detail;
+                            var cropper = this.cropper;
+                            var imageData = cropper.getImageData();
+                            var previewAspectRatio = data.width / data.height;
+                
+                            var elem  = document.getElementById('preview');
+                            var previewImage = document.getElementById('hello');
+                            var previewWidth = elem.offsetWidth;
+                            var previewHeight = previewWidth / previewAspectRatio;
+                            var imageScaledRatio = data.width / previewWidth;
+                            elem.style.height = previewHeight + 'px';
+                            previewImage.style.width = imageData.naturalWidth / imageScaledRatio + 'px';
+                            previewImage.style.height = imageData.naturalHeight / imageScaledRatio + 'px';
+                            previewImage.style.marginLeft = -data.x / imageScaledRatio + 'px';
+                            previewImage.style.marginTop = -data.y / imageScaledRatio + 'px';
+                        },
+                    });
+                }, 200);
+     
+         
+            }).on("hidden.bs.modal", function () {
+                cropper.destroy();
+                cropper = null;
+            })
+
+            $("#close").on("click", function(){
+                $("#avatar-btn").val(null)
+                $('#profile-pic').attr("src", oldImg)
+            })
+
+            $("#save").on("click", function(){
+                var canvas = cropper.getCroppedCanvas({
+                    wigth: 300,
+                    height: 300
+                });
+                canvas.toBlob(function(blob){
+                    var url = URL.createObjectURL(blob);
+                    $('#profile-pic').attr('src', url);
+                    var file = new File([blob], imageName, {type: blob.type});
+                    let container = new DataTransfer();
+                    container.items.add(file);
+                    let fileInputElement = document.getElementById('avatar-btn');
+                    fileInputElement.files = container.files;
+                })
+                $("#preview-modal").modal('hide');
+            });
+
+            
+    </script>
+  </body>
+</html>
